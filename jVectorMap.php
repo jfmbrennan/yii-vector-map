@@ -2,17 +2,21 @@
 
 class jVectorMap extends CWidget{
 
-	public $scriptUrl;
+	public $baseUrl;
 
 	public $scriptFile=array('jquery-jvectormap-1.1.1.min.js');
 	
-	public $pluginScriptFile=array();
-	
 	public $cssFile=array('jquery-jvectormap-1.1.1.css');
+
+    public $mapFile=array();
+
+    public $tagName='div';
 
 	public $data=array();
 	
 	public $options=array();
+
+	public $htmlOptions=array();
 
 	public function init(){
 		$this->resolvePackagePath();
@@ -21,21 +25,20 @@ class jVectorMap extends CWidget{
 	}
 
 	public function run(){
-		$id=$this->getId();
-		$this->htmlOptions['id']=$id;        
-
-    $options=CJavaScript::encode($this->options);
-    $jscode = "jQuery('#{$id}').vectorMap({$options});";
+        if(!isset($this->htmlOptions['id']))
+            $this->htmlOptions['id']=$this->getId();
+        echo CHtml::tag($this->tagName,$this->htmlOptions,'');
+        $options=CJavaScript::encode($this->options);
+        $id=$this->htmlOptions['id'];
+        $jscode = "jQuery('#{$id}').vectorMap({$options});";
 		
-    Yii::app()->getClientScript()->registerScript(__CLASS__.'#'.$id,$jscode,CClientScript::POS_END);
+        Yii::app()->getClientScript()->registerScript(__CLASS__.'#'.$id,$jscode,CClientScript::POS_END);
 	}
 
 	protected function resolvePackagePath(){
-		if($this->scriptUrl===null){
-			$basePath=Yii::getPathOfAlias('application.extensions.jvectormaps.assets');
-			$baseUrl=Yii::app()->getAssetManager()->publish($basePath);
-			if($this->scriptUrl===null)
-				$this->scriptUrl=$baseUrl.'';
+		if($this->baseUrl===null){
+			$basePath=Yii::getPathOfAlias('application.extensions.jvectormap.assets');
+			$this->baseUrl=Yii::app()->getAssetManager()->publish($basePath);
 		}
 	}
 
@@ -55,13 +58,24 @@ class jVectorMap extends CWidget{
 			foreach($this->scriptFile as $scriptFile)
 				$this->registerScriptFile($scriptFile);
 		}
+
+		if(is_string($this->mapFile))
+			$this->registerMapFile($this->mapFile);
+		else if(is_array($this->mapFile)){
+			foreach($this->mapFile as $mapFile)
+				$this->registerMapFile($mapFile);
+		}
 	}
 
-	protected function registerScriptFile($fileName,$position=CClientScript::POS_HEAD){
-		Yii::app()->clientScript->registerScriptFile($this->scriptUrl.'/'.$fileName,$position);
+	protected function registerScriptFile($fileName,$position=CClientScript::POS_END){
+		Yii::app()->clientScript->registerScriptFile($this->baseUrl.'/'.$fileName,$position);
 	}
 
 	protected function registerCssFile($fileName){
-		Yii::app()->clientScript->registerCssFile($this->themeUrl.'/'.$fileName);
+		Yii::app()->clientScript->registerCssFile($this->baseUrl.'/'.$fileName);
+	}
+
+	protected function registerMapFile($fileName,$position=CClientScript::POS_END){
+		Yii::app()->clientScript->registerScriptFile($this->baseUrl.'/maps/'.$fileName,$position);
 	}
 }
