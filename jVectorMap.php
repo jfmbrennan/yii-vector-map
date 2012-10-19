@@ -8,7 +8,7 @@ class jVectorMap extends CWidget{
 	
 	public $cssFile=array('jquery-jvectormap-1.1.1.css');
 
-    public $mapFile=array();
+    public $mapFile=array('jquery-jvectormap-world-mill-en.js');
 
     public $tagName='div';
 
@@ -18,6 +18,8 @@ class jVectorMap extends CWidget{
 
 	public $htmlOptions=array();
 
+    public $seriesOptions=array();
+
 	public function init(){
 		$this->resolvePackagePath();
 		$this->registerCoreScripts();
@@ -25,13 +27,23 @@ class jVectorMap extends CWidget{
 	}
 
 	public function run(){
-        if(!isset($this->htmlOptions['id']))
-            $this->htmlOptions['id']=$this->getId();
+        $id=$this->htmlOptions['id']=$this->getId();
         echo CHtml::tag($this->tagName,$this->htmlOptions,'');
-        $options=CJavaScript::encode($this->options);
-        $id=$this->htmlOptions['id'];
-        $jscode = "jQuery('#{$id}').vectorMap({$options});";
-		
+
+        if(is_array($this->data)) {
+            $this->options['series']['regions'][] = 
+                array_merge($this->seriesOptions, array('values'=>$this->data));
+            $options=CJavaScript::encode($this->options);
+            $jscode = "jQuery('#{$id}').vectorMap({$options});";
+        }
+        else {
+            $this->options['container'] = "js:$('#{$this->htmlOptions['id']}')"; 
+            $this->options['series']['regions'][] = 
+                array_merge($this->seriesOptions, array('values'=>'js:data'));
+            $jscode="$.getJSON('{$this->data}',function(data){new jvm.WorldMap(";
+            $jscode.=CJavaScript::encode($this->options);
+            $jscode.=')})';
+        }
         Yii::app()->getClientScript()->registerScript(__CLASS__.'#'.$id,$jscode,CClientScript::POS_END);
 	}
 
